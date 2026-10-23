@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { connectionFromUrl } from '../src/lib/redis.js';
+import { EventEmitter } from 'node:events';
+import { describe, expect, it, vi } from 'vitest';
+import { attachRedisErrorListener, connectionFromUrl } from '../src/lib/redis.js';
 
 describe('connectionFromUrl', () => {
   it('parses host, port, auth and db', () => {
@@ -15,5 +16,35 @@ describe('connectionFromUrl', () => {
   });
   it('rejects other protocols', () => {
     expect(() => connectionFromUrl('http://h')).toThrow(/Unsupported/);
+  });
+});
+
+describe('attachRedisErrorListener', () => {
+  it('logs a concise warning at most once per 10 seconds', () => {
+    vi.useFakeTimers();
+    try {
+      const client = new EventEmitter();
+      const warn = vi.fn();
+      attachRedisErrorListener(client as never, { warn });
+      const first = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+
+      client.emit('error', first);
+      client.emit('error', first);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(
+        { error: 'connect ECONNREFUSED', code: 'ECONNREFUSED' },
+        'Redis connection failed; retrying',
+      );
+
+      vi.advanceTimersByTime(9_999);
+      client.emit('error', first);
+      expect(warn).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(1);
+      client.emit('error', first);
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

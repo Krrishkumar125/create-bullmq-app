@@ -11,7 +11,7 @@ const logger = createLogger(config, 'worker');
 
 const clients: ReturnType<typeof createRedis>[] = [];
 const workers = Object.values(jobs).map((def) => {
-  const connection = createRedis(config.REDIS_URL, { forWorker: true });
+  const connection = createRedis(config.REDIS_URL, logger, { forWorker: true });
   clients.push(connection);
   const w = new Worker(def.name, def.process, {
     connection,
@@ -32,7 +32,7 @@ const workers = Object.values(jobs).map((def) => {
 const schedulerQueues: Queue[] = [];
 for (const def of Object.values(jobs)) {
   if (!def.schedule) continue;
-  const connection = createRedis(config.REDIS_URL);
+  const connection = createRedis(config.REDIS_URL, logger);
   clients.push(connection);
   const q = new Queue(def.name, { connection, prefix: config.QUEUE_PREFIX });
   schedulerQueues.push(q);

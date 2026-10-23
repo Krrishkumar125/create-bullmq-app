@@ -7,7 +7,7 @@ import { createQueues } from './queues.js';
 
 const config = loadConfig();
 const logger = createLogger(config, 'api');
-const { queues, closeAll } = createQueues(config);
+const { queues, closeAll } = createQueues(config, logger);
 let draining = false;
 
 const app = createApp({ queues, logger, isShuttingDown: () => draining, adminToken: config.ADMIN_TOKEN });

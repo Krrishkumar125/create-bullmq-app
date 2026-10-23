@@ -12,7 +12,8 @@ describe.skipIf(!url)('integration (real Redis)', () => {
   let events: QueueEvents;
   let worker: Worker;
   const clients: ReturnType<typeof createRedis>[] = [];
-  const client = (forWorker = false) => { const c = createRedis(url!, { forWorker }); clients.push(c); return c; };
+  const logger = { warn: () => {} };
+  const client = (forWorker = false) => { const c = createRedis(url!, logger, { forWorker }); clients.push(c); return c; };
 
   beforeAll(async () => {
     queue = new Queue(email.name, { connection: client(), prefix });

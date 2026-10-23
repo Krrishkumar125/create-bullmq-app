@@ -2,16 +2,17 @@ import { Queue } from 'bullmq';
 import type { Config } from './config.js';
 import { jobs } from './jobs/index.js';
 import type { Redis } from 'ioredis';
+import type { Logger } from './lib/logger.js';
 import { createRedis } from './lib/redis.js';
 
-export function createQueues(config: Config) {
+export function createQueues(config: Config, logger: Logger) {
   const queues = new Map<string, Queue>();
   const clients: Redis[] = [];
   for (const name of Object.keys(jobs)) {
     queues.set(
       name,
       new Queue(name, {
-        connection: track(clients, createRedis(config.REDIS_URL)),
+        connection: track(clients, createRedis(config.REDIS_URL, logger)),
         prefix: config.QUEUE_PREFIX,
         defaultJobOptions: {
           attempts: config.JOB_ATTEMPTS,
