@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: { pm: [pnpm, bun] }
+      matrix: { pm: [pnpm, bun, yarn] }
     services:
       redis:
         image: redis:7-alpine
@@ -90,6 +90,10 @@ jobs:
         with: { version: 9 }
       - if: matrix.pm == 'bun'
         uses: oven-sh/setup-bun@v2
+      - if: matrix.pm == 'yarn'
+        run: |
+          corepack enable yarn
+          corepack install --global yarn@4.9.4
       - name: Scaffold and install with ${{ matrix.pm }}
         run: node bin/index.js ../svc-${{ matrix.pm }} --no-git --pm ${{ matrix.pm }}
       - name: Typecheck, test, new:queue, build
